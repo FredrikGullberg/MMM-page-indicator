@@ -68,6 +68,8 @@ Use `Tab` to focus a page indicator, then press `Enter` or `Space` to select it.
 
 ### Timer ring
 
+![Timer ring: fills during auto rotation, restarts after a key press, pause symbol while paused](examples/screencast_6_timer-ring.gif)
+
 With `timerRing: true` the active page gets a thin ring that fills until
 [MMM-pages] changes page automatically. It listens for `PAGE_TIMING`
 (`{ page, duration, remaining, paused }`) and asks for the current state with
