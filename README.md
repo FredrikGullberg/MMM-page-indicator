@@ -53,17 +53,45 @@ To use this module, add it to the modules array in the `config/config.js` file:
 
 All configuration options are optional.
 
-| Option                  | Description                                                                                           |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `pages`                 | Number of pages that you have.<br/>**Value type:** `int`<br/>**Default value:** `3`                   |
-| `activeBright`          | Should the active circle be bright.<br/>**Value type:** `boolean`<br/>**Default value:** `false`      |
-| `inactiveDimmed`        | Should the inactive circles be dimmed?<br/>**Value type:** `boolean`<br/>**Default value:** `true`    |
-| `inactiveHollow`        | Should the inactive circles be hollow?<br/>**Value type:** `boolean`<br/>**Default value:** `true`    |
-| `showPageNumberOnHover` | Should the page number be shown on hover?<br/>**Value type:** `boolean`<br/>**Default value:** `true` |
+| Option                  | Description                                                                                                                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`                 | Number of pages that you have.<br/>**Value type:** `int`<br/>**Default value:** `3`                                                                                                                                                                                       |
+| `activeBright`          | Should the active circle be bright.<br/>**Value type:** `boolean`<br/>**Default value:** `false`                                                                                                                                                                          |
+| `inactiveDimmed`        | Should the inactive circles be dimmed?<br/>**Value type:** `boolean`<br/>**Default value:** `true`                                                                                                                                                                        |
+| `inactiveHollow`        | Should the inactive circles be hollow?<br/>**Value type:** `boolean`<br/>**Default value:** `true`                                                                                                                                                                        |
+| `showPageNumberOnHover` | Should the page number be shown on hover?<br/>**Value type:** `boolean`<br/>**Default value:** `true`                                                                                                                                                                     |
+| `timerRing`             | Draw a ring around the active page that fills until the next automatic page change, and a pause symbol while rotation is paused. Needs MMM-pages with `PAGE_TIMING` support (see [Timer ring](#timer-ring)).<br/>**Value type:** `boolean`<br/>**Default value:** `false` |
 
 ### Keyboard navigation
 
 Use `Tab` to focus a page indicator, then press `Enter` or `Space` to select it. Assistive technologies can identify each indicator by its page number and announce which page is current.
+
+### Timer ring
+
+With `timerRing: true` the active page gets a thin ring that fills until
+[MMM-pages] changes page automatically. It listens for `PAGE_TIMING`
+(`{ page, duration, remaining, paused }`) and asks for the current state with
+`QUERY_PAGE_TIMING` when the mirror starts. The fill is a CSS animation; on
+re-render it continues from the elapsed time instead of restarting.
+
+- Pages without automatic rotation get no ring.
+- While rotation is paused (for example with Space in MMM-pages keyboard
+  navigation) the active dot becomes a pause symbol inside a still ring.
+- After a manual page change the ring starts over for the new page.
+
+Restyle it in `custom.css`, for example a thicker, gold ring:
+
+```css
+.MMM-page-indicator .timer-ring circle {
+  stroke-width: 2;
+}
+.MMM-page-indicator .timer-ring-arc {
+  stroke: #e7c64a;
+}
+```
+
+The ring size and position follow `--ring-size` and `--ring-offset` on
+`.has-timer-ring`.
 
 ## Styling
 

@@ -513,3 +513,75 @@ describe('MMM-page-indicator', () => {
     });
   });
 });
+
+describe('MMM-page-indicator timer ring', () => {
+  let module;
+
+  beforeEach(() => {
+    module = Object.create(moduleDefinition);
+    module.name = 'MMM-page-indicator';
+    module.config = { ...moduleDefinition.defaults, pages: 3, timerRing: true };
+    module.sendNotification = mock.fn();
+    module.updateDom = mock.fn();
+    module.start();
+  });
+
+  const timing = (overrides = {}) => ({ page: 0, duration: 20000, remaining: 20000, paused: false, ...overrides });
+
+  it('is off by default and ignores PAGE_TIMING then', () => {
+    module.config.timerRing = false;
+    module.notificationReceived('PAGE_TIMING', timing());
+    assert.equal(module.timing, null);
+    assert.equal(module.getDom().querySelector('.timer-ring'), null);
+    module.notificationReceived('DOM_OBJECTS_CREATED');
+    assert.equal(module.sendNotification.mock.callCount(), 0);
+  });
+
+  it('asks MMM-pages for the current timing on start', () => {
+    module.notificationReceived('DOM_OBJECTS_CREATED');
+    assert.equal(module.sendNotification.mock.calls[0].arguments[0], 'QUERY_PAGE_TIMING');
+  });
+
+  it('draws a ring on the active page that continues from the elapsed time', (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: 1_000_000 });
+    module.notificationReceived('PAGE_TIMING', timing({ remaining: 15000 }));
+    assert.equal(module.updateDom.mock.callCount(), 1);
+    t.mock.timers.tick(2000);
+    const dom = module.getDom();
+    const ring = dom.querySelector('.timer-ring');
+    assert.ok(ring);
+    assert.ok(ring.parentElement.classList.contains('has-timer-ring'));
+    assert.ok(ring.parentElement.querySelector('.page-0'));
+    const arc = ring.querySelector('.timer-ring-arc');
+    assert.equal(arc.style.getPropertyValue('--ring-duration'), '20000ms');
+    assert.equal(arc.style.getPropertyValue('--ring-elapsed'), '7000ms');
+    assert.equal(dom.querySelectorAll('.timer-ring').length, 1);
+  });
+
+  it('shows a pause symbol and a still ring while paused', () => {
+    module.notificationReceived('PAGE_TIMING', timing({ duration: 0, remaining: 0, paused: true }));
+    const dom = module.getDom();
+    const active = dom.querySelector('.active-page');
+    assert.ok(active.classList.contains('fa-pause'));
+    assert.equal(active.getAttribute('aria-label'), 'Page 1, rotation paused');
+    assert.ok(dom.querySelector('.timer-ring-paused'));
+    assert.equal(dom.querySelector('.timer-ring-arc'), null);
+  });
+
+  it('draws nothing for a page without rotation or for another page', () => {
+    module.notificationReceived('PAGE_TIMING', timing({ duration: 0, remaining: 0 }));
+    assert.equal(module.getDom().querySelector('.timer-ring'), null);
+    module.notificationReceived('PAGE_TIMING', timing({ page: 2 }));
+    assert.equal(module.getDom().querySelector('.timer-ring'), null);
+    module.notificationReceived('NEW_PAGE', 2);
+    assert.ok(module.getDom().querySelector('.page-2').parentElement.querySelector('.timer-ring'));
+  });
+
+  it('rejects malformed timing', () => {
+    module.notificationReceived('PAGE_TIMING', { page: 'x', duration: 5 });
+    module.notificationReceived('PAGE_TIMING', timing({ duration: -1 }));
+    module.notificationReceived('PAGE_TIMING', null);
+    assert.equal(module.timing, null);
+    assert.equal(module.updateDom.mock.callCount(), 0);
+  });
+});
